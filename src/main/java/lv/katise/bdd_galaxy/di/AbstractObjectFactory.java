@@ -1,4 +1,4 @@
-package com.qa_universe.bdd_galaxy.di;
+package lv.katise.bdd_galaxy.di;
 
 import io.cucumber.core.backend.ObjectFactory;
 

@@ -1,4 +1,4 @@
-package com.qa_universe.bdd_galaxy.runner;
+package lv.katise.bdd_galaxy.runner;
 
 import io.cucumber.core.runtime.TestCaseResultObserver;
 import org.testng.SkipException;

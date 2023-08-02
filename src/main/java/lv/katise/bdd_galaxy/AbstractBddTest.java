@@ -1,10 +1,10 @@
-package com.qa_universe.bdd_galaxy;
+package lv.katise.bdd_galaxy;
 
-import com.qa_universe.bdd_galaxy.runner.BddRunner;
-import com.qa_universe.bdd_galaxy.runner.FeatureWrapper;
-import com.qa_universe.bdd_galaxy.runner.IBddRunner;
-import com.qa_universe.bdd_galaxy.runner.PickleWrapper;
 import io.cucumber.core.gherkin.Feature;
+import lv.katise.bdd_galaxy.runner.BddRunner;
+import lv.katise.bdd_galaxy.runner.FeatureWrapper;
+import lv.katise.bdd_galaxy.runner.IBddRunner;
+import lv.katise.bdd_galaxy.runner.PickleWrapper;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

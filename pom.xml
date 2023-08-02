@@ -6,7 +6,7 @@
 
     <groupId>lv.katise</groupId>
     <artifactId>bdd-galaxy</artifactId>
-    <version>1.00.01</version>
+    <version>1.00.02</version>
     <packaging>jar</packaging>
     <description>Library for implementation BDD in project with PageObjectPattern and testNg</description>
 
@@ -41,6 +41,11 @@
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-picocontainer</artifactId>
             <version>7.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.12</version>
         </dependency>
     </dependencies>
 
