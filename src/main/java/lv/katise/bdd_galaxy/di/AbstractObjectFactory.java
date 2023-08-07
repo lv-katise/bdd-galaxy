@@ -15,22 +15,21 @@ public abstract class AbstractObjectFactory implements ObjectFactory {
 
     }
 
-    public static boolean canInstantiateWithEmptyConstructor(Class<?> clazz, int count) {
+    public static boolean canInstantiateWith(Class<?> clazz, int parametersCount) {
         try {
             Constructor<?> constructor = clazz.getDeclaredConstructor();
             constructor.setAccessible(true);
-            return constructor.getParameterCount() == count;
+            return constructor.getParameterCount() == parametersCount;
         } catch (NoSuchMethodException e) {
             return false;
         }
     }
 
     public static boolean canInstantiateWithEmptyConstructor(Class<?> clazz) {
-        return canInstantiateWithEmptyConstructor(clazz, 0);
+        return canInstantiateWith(clazz, 0);
     }
 
     public void start() {
-
         startExtend();
     }
 

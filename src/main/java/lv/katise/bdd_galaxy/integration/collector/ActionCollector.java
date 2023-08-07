@@ -1,13 +1,18 @@
 package lv.katise.bdd_galaxy.integration.collector;
 
-import lv.katise.bdd_galaxy.integration.bdd.DefinedStep;
-import lv.katise.bdd_galaxy.integration.bdd.Entrypoint;
-import lv.katise.bdd_galaxy.integration.collector.action.BDDAction;
-import lv.katise.bdd_galaxy.integration.collector.action.IAction;
-import lv.katise.bdd_galaxy.integration.collector.graph.ActionGraph;
-import lv.katise.bdd_galaxy.integration.collector.graph.IActionGraph;
-import lv.katise.bdd_galaxy.integration.collector.graph.context.ActionContext;
-import lv.katise.bdd_galaxy.integration.collector.graph.context.IActionContext;
+import lv.katise.bdd_galaxy.core.UUIDGenerator;
+import lv.katise.bdd_galaxy.integration.bdd.Action;
+import lv.katise.bdd_galaxy.integration.bdd.BDDContext;
+import lv.katise.bdd_galaxy.integration.collector.action.IActionReturn;
+import lv.katise.bdd_galaxy.integration.collector.action.defauld.ActionArgument;
+import lv.katise.bdd_galaxy.integration.collector.action.defauld.ArgumentType;
+import lv.katise.bdd_galaxy.integration.collector.action.defauld.BDDStep;
+import lv.katise.bdd_galaxy.integration.collector.action.defauld.DefaultReturn;
+import lv.katise.bdd_galaxy.integration.collector.hierarchy.ActionHierarchy;
+import lv.katise.bdd_galaxy.integration.collector.hierarchy.IActionHierarchy;
+import lv.katise.bdd_galaxy.integration.collector.hierarchy.context.ActionGroup;
+import lv.katise.bdd_galaxy.integration.collector.hierarchy.context.ITestStepGroup;
+import lv.katise.bdd_galaxy.properties.PropertiesService;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.MethodAnnotationsScanner;
@@ -16,96 +21,121 @@ import org.reflections.scanners.TypeAnnotationsScanner;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Parameter;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class ActionCollector<T> implements IActionCollector<T> {
+public class ActionCollector implements IActionCollector {
 
-    private final String gluePath;
-    private final Class<T> tClass;
-    private final Map<Class<? extends T>, IActionContext<T>> contextMap = new HashMap<>();
-    ;
-
-    public ActionCollector(String gluePath, Class<T> tClass) {
-        this.gluePath = gluePath;
-        this.tClass = tClass;
-    }
+    private final Map<UUID, ITestStepGroup> groupMap = new HashMap<>();
 
     @Override
-    public List<IAction<T>> collectEntryPoints() {
-        List<Method> methods = getMethods(gluePath, Entrypoint.class);
+    public IActionHierarchy buildActionsHierarchy(String gluePath) {
+        ActionHierarchy hierarchy = new ActionHierarchy(PropertiesService.getPOMProperties().getVersion());
+        List<BDDStep> actions = collectActions(gluePath);
+        for (BDDStep action : actions) {
+            ITestStepGroup group = groupMap.get(action.getGroupId());
+            group.addStep(action);
+        }
+        groupMap.forEach((key, value) -> hierarchy.addContext(value));
+        return hierarchy;
+    }
+
+    private List<BDDStep> collectActions(String gluePath) {
+        List<Method> methods = getMethods(gluePath, Action.class);
         return methods.stream().map(e -> {
-            Entrypoint annotation = e.getAnnotation(Entrypoint.class);
-            return new BDDAction<>(true, (Class<T>) e.getDeclaringClass(), e.getName(), annotation.value(), null, e.getReturnType());
+            Action annotation = e.getAnnotation(Action.class);
+
+            IActionReturn returnInstance = buildReturn(e.getReturnType(), e.getDeclaringClass());
+            BDDStep bddStep = new BDDStep(
+                    annotation.isEntrypoint(),
+                    annotation.value(),
+                    null,
+                    returnInstance);
+            bddStep.setGroupId(provideCurrentGroup(e.getDeclaringClass()).getId());
+            for (Parameter parameter : e.getParameters()) {
+                Class<?> parameterType = parameter.getType();
+                Optional<ArgumentType> argumentType = provideArgumentType(parameterType);
+                if (argumentType.isEmpty()) {
+                    throw new RuntimeException(String.format("For method: '%s' Unsupported argument type: '%s'",
+                            e.getName(), parameterType));
+                }
+                bddStep.addArgument(new ActionArgument(argumentType.get(), parameter.getName()));
+            }
+
+            return bddStep;
         }).collect(Collectors.toList());
     }
 
-    @Override
-    public List<IAction<T>> collectSteps(Class<? extends T> rootClass) {
-        List<Method> methods = getMethods(rootClass, DefinedStep.class);
-        return methods.stream().map(e -> {
-            DefinedStep annotation = e.getAnnotation(DefinedStep.class);
-            return new BDDAction<T>(false, (Class<T>) e.getDeclaringClass(), e.getName(), annotation.value(), null, e.getReturnType());
-        }).collect(Collectors.toList());
+    private IActionReturn buildReturn(Class<?> returnClass, Class<?> definedClass) {
+        DefaultReturn defaultReturn = new DefaultReturn();
+        ITestStepGroup group = provideReturnGroup(returnClass, definedClass);
+        defaultReturn.setGroupId(group.getId());
+        if (!BDDContext.class.isAssignableFrom(returnClass) && !returnClass.equals(Void.TYPE)) {
+            Optional<ArgumentType> argumentType = provideArgumentType(returnClass);
+            if (argumentType.isEmpty()) {
+                throw new RuntimeException(String.format("For class: '%s' Unsupported return type: %s",
+                        defaultReturn, returnClass));
+            }
+            defaultReturn.setReturnType(new ActionArgument(argumentType.get(), null));
+        }
+        return defaultReturn;
     }
 
-    @Override
-    public IActionGraph<T> buildStepGraph() {
-        ActionGraph<T> actionGraph = new ActionGraph<>();
-
-        List<IAction<T>> entryPoints = collectEntryPoints();
-        actionGraph.addEntryPoints(entryPoints);
-        fill(entryPoints);
-
-        return actionGraph;
+    private Optional<ArgumentType> provideArgumentType(Class<?> clazz) {
+        if (clazz.equals(String.class)) {
+            return Optional.of(ArgumentType.STRING);
+        } else if (clazz.equals(Boolean.class)) {
+            return Optional.of(ArgumentType.BOOLEAN);
+        } else if (clazz.equals(Integer.class)) {
+            return Optional.of(ArgumentType.INTEGER);
+        } else if (clazz.equals(Double.class)) {
+            return Optional.of(ArgumentType.DOUBLE);
+        } else if (clazz.equals(LocalDateTime.class)) {
+            return Optional.of(ArgumentType.DATE_TIME);
+        }
+        return Optional.empty();
     }
 
-    @Override
-    public IActionContext<T> provideContext(Class<? extends T> returnType) {
-        if (!contextMap.containsKey(returnType)) {
-            ActionContext<T> actionContext = new ActionContext<>();
-            actionContext.setContextClass(returnType);
-            contextMap.put(returnType, actionContext);
-            List<IAction<T>> actions = collectSteps(returnType);
-            actionContext.setActions(actions);
-            fill(actions);
-            return actionContext;
+    private ITestStepGroup provideReturnGroup(Class<?> returnClass, Class<?> definedClass) {
+        Optional<ArgumentType> argumentType = provideArgumentType(returnClass);
+        if (argumentType.isPresent()) {
+            return provideCurrentGroup(definedClass);
         } else {
-            return contextMap.get(returnType);
+            return provideCurrentGroup(returnClass);
         }
     }
 
-    private void fill(List<IAction<T>> actions) {
-        for (IAction<T> action : actions) {
-            Class<?> returnType = action.getReturnType();
-            if (tClass.isAssignableFrom(returnType)) {
-                action.setReturnContext(provideContext((Class<? extends T>) returnType));
+    private ITestStepGroup provideCurrentGroup(Class<?> actionDefinedClass) {
+        UUID definedKey = UUIDGenerator.generateUUIDFromString(String.valueOf(actionDefinedClass));
+        if (!groupMap.containsKey(definedKey)) {
+
+            Class<?> groupClass;
+            if (actionDefinedClass == null || BDDContext.class.isAssignableFrom(actionDefinedClass)) {
+                groupClass = actionDefinedClass;
             } else {
-                action.setReturnContext(provideContext(action.getDefinedClass()));
+                return provideCurrentGroup(null);
             }
+
+            ActionGroup actionGroup = new ActionGroup();
+            actionGroup.setClass(groupClass);
+            groupMap.put(UUIDGenerator.generateUUIDFromString(String.valueOf(groupClass)), actionGroup);
+            return actionGroup;
+        } else {
+            return groupMap.get(definedKey);
         }
     }
 
     private List<Method> getMethods(String packageName, Class<? extends Annotation> annotation) {
         if (packageName != null && !packageName.isEmpty()) {
-            Reflections reflections = new Reflections(packageName, new SubTypesScanner(),
+            Reflections reflections = new Reflections(packageName,
+                    new SubTypesScanner(),
                     new TypeAnnotationsScanner(),
-                    new FieldAnnotationsScanner(), new MethodAnnotationsScanner());
+                    new FieldAnnotationsScanner(),
+                    new MethodAnnotationsScanner());
             return new ArrayList<>(reflections.getMethodsAnnotatedWith(annotation));
         }
         return new ArrayList<>();
-    }
-
-    private List<Method> getMethods(Class<? extends T> rootClazz, Class<? extends Annotation> annotation) {
-        ArrayList<Method> methods = new ArrayList<>();
-        for (Method method : rootClazz.getMethods()) {
-            if (method.isAnnotationPresent(annotation)) {
-                methods.add(method);
-            }
-        }
-        return methods;
     }
 }

@@ -9,6 +9,8 @@ import java.lang.annotation.*;
 @StepDefinitionAnnotation
 @Documented
 @BddGalaxyStep
-public @interface Entrypoint {
+public @interface Action {
     String value();
+
+    boolean isEntrypoint() default false;
 }
