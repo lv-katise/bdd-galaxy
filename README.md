@@ -18,4 +18,4 @@ Here is described library for implementation bdd in java project
 - Properties for application have to be provided in [bdd-galaxy.properties](bdd-galaxy.properties) file
 - ```galaxy.host``` - rest api host to your GA-GALAXY service
 - ```galaxy.token``` - Uniq token for access to your GA-GALAXY service
-- ```galaxy.project``` - test project added to your GA-GALAXY service
+- ```galaxy.project.id``` - test project UUID added to your GA-GALAXY service

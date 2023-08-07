@@ -8,23 +8,29 @@ import java.util.UUID;
 
 public class BDDStep implements ITestStep {
 
-    private final boolean isEntrypoint;
+    private UUID id;
+    private final boolean isEntryPoint;
     private final String name;
     private final String body;
     private UUID groupId;
     private final ArrayList<ActionArgument> arguments = new ArrayList<>();
     private final IActionReturn _return;
 
-    public BDDStep(boolean isEntrypoint, String name, String body, IActionReturn returnInstance) {
-        this.isEntrypoint = isEntrypoint;
+    public BDDStep(boolean isEntryPoint, String name, String body, IActionReturn returnInstance) {
+        this.isEntryPoint = isEntryPoint;
         this.name = name;
         this.body = body;
         this._return = returnInstance;
     }
 
     @Override
-    public boolean isEntrypoint() {
-        return isEntrypoint;
+    public UUID getId() {
+        return id;
+    }
+
+    @Override
+    public boolean getIsEntryPoint() {
+        return isEntryPoint;
     }
 
     @Override
@@ -58,5 +64,9 @@ public class BDDStep implements ITestStep {
 
     public void setGroupId(UUID groupId) {
         this.groupId = groupId;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 }

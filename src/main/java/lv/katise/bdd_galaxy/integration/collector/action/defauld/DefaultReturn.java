@@ -21,7 +21,7 @@ public class DefaultReturn implements IActionReturn {
         this.groupId = groupId;
     }
 
-    public void setReturnType(ActionArgument type) {
+    public void setReturn(ActionArgument type) {
         this.returnType = type;
     }
 
@@ -31,7 +31,7 @@ public class DefaultReturn implements IActionReturn {
     }
 
     @Override
-    public ActionArgument getReturnType() {
+    public ActionArgument getReturn() {
         return returnType;
     }
 }

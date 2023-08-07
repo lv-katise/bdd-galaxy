@@ -63,6 +63,7 @@ public class ActionCollector implements IActionCollector {
                 }
                 bddStep.addArgument(new ActionArgument(argumentType.get(), parameter.getName()));
             }
+            bddStep.setId(UUIDGenerator.generateUUIDFromString(bddStep.getGroupId() + " " + bddStep.getName()));
 
             return bddStep;
         }).collect(Collectors.toList());
@@ -78,7 +79,7 @@ public class ActionCollector implements IActionCollector {
                 throw new RuntimeException(String.format("For class: '%s' Unsupported return type: %s",
                         defaultReturn, returnClass));
             }
-            defaultReturn.setReturnType(new ActionArgument(argumentType.get(), null));
+            defaultReturn.setReturn(new ActionArgument(argumentType.get(), null));
         }
         return defaultReturn;
     }

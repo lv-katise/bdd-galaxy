@@ -1,6 +1,5 @@
 package lv.katise.bdd_galaxy.integration.collector.hierarchy.context;
 
-import lv.katise.bdd_galaxy.core.UUIDGenerator;
 import lv.katise.bdd_galaxy.integration.collector.action.ITestStep;
 import lv.katise.bdd_galaxy.properties.PropertiesService;
 
@@ -12,7 +11,7 @@ public interface ITestStepGroup {
     UUID getId();
 
     default UUID getProjectId() {
-        return UUIDGenerator.generateUUIDFromString(PropertiesService.getProperty("galaxy.project", ""));
+        return UUID.fromString(PropertiesService.getProperty("galaxy.project.id", ""));
     }
 
     String getName();

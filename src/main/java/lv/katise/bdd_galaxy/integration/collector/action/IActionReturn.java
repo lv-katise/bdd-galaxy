@@ -8,5 +8,5 @@ public interface IActionReturn {
 
     UUID getGroupId();
 
-    ActionArgument getReturnType();
+    ActionArgument getReturn();
 }

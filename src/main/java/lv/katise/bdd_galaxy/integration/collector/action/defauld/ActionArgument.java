@@ -2,20 +2,20 @@ package lv.katise.bdd_galaxy.integration.collector.action.defauld;
 
 public class ActionArgument {
 
-    private ArgumentType argumentType;
+    private ArgumentType type;
     private String name;
 
-    public ActionArgument(ArgumentType argumentType, String name) {
-        this.argumentType = argumentType;
+    public ActionArgument(ArgumentType type, String name) {
+        this.type = type;
         this.name = name;
     }
 
-    public ArgumentType getArgumentType() {
-        return argumentType;
+    public ArgumentType getType() {
+        return type;
     }
 
-    public void setArgumentType(ArgumentType argumentType) {
-        this.argumentType = argumentType;
+    public void setType(ArgumentType argumentType) {
+        this.type = argumentType;
     }
 
     public String getName() {
