@@ -73,7 +73,12 @@ public class ActionCollector implements IActionCollector {
         DefaultReturn defaultReturn = new DefaultReturn();
         ITestStepGroup group = provideReturnGroup(returnClass, definedClass);
         defaultReturn.setGroupId(group.getId());
-        if (!BDDContext.class.isAssignableFrom(returnClass) && !returnClass.equals(Void.TYPE)) {
+
+        if (returnClass.equals(Void.TYPE)) {
+            group = provideCurrentGroup(definedClass);
+            defaultReturn.setGroupId(group.getId());
+            return defaultReturn;
+        } else if (!BDDContext.class.isAssignableFrom(returnClass)) {
             Optional<ArgumentType> argumentType = provideArgumentType(returnClass);
             if (argumentType.isEmpty()) {
                 throw new RuntimeException(String.format("For class: '%s' Unsupported return type: %s",
