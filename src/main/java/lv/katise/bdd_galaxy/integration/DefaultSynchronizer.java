@@ -18,8 +18,8 @@ public class DefaultSynchronizer implements ISynchronizer {
     }
 
     @Override
-    public void synchronize(String gluePath) {
-        IActionHierarchy hierarchy = collector.buildActionsHierarchy(gluePath);
+    public void synchronize(String... gluePaths) {
+        IActionHierarchy hierarchy = collector.buildActionsHierarchy(gluePaths);
         writeToFile(new JSONObject(hierarchy).toString());
     }
 

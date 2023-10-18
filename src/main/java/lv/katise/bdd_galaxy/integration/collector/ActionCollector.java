@@ -31,9 +31,14 @@ public class ActionCollector implements IActionCollector {
     private final Map<UUID, ITestStepGroup> groupMap = new HashMap<>();
 
     @Override
-    public IActionHierarchy buildActionsHierarchy(String gluePath) {
+    public IActionHierarchy buildActionsHierarchy(String... gluePaths) {
         ActionHierarchy hierarchy = new ActionHierarchy(PropertiesService.getPOMProperties().getVersion());
-        List<BDDStep> actions = collectActions(gluePath);
+        List<BDDStep> actions = new ArrayList<>();
+        if (gluePaths != null) {
+            for (String path : gluePaths) {
+                actions.addAll(collectActions(path));
+            }
+        }
         for (BDDStep action : actions) {
             ITestStepGroup group = groupMap.get(action.getGroupId());
             group.addStep(action);
