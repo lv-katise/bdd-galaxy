@@ -11,6 +11,12 @@ public class ActionGroup implements ITestStepGroup {
 
     private final List<ITestStep> steps = new ArrayList<>();
     private Class<?> groupClass;
+    private String groupName;
+
+    public ActionGroup(Class<?> groupClass, String groupName) {
+        this.groupClass = groupClass;
+        this.groupName = groupName;
+    }
 
     @Override
     public UUID getId() {
@@ -19,7 +25,7 @@ public class ActionGroup implements ITestStepGroup {
 
     @Override
     public String getName() {
-        return String.valueOf(groupClass);
+        return groupName;
     }
 
     @Override

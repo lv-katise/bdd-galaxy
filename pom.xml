@@ -6,7 +6,7 @@
 
     <groupId>lv.katise</groupId>
     <artifactId>bdd-galaxy</artifactId>
-    <version>1.00.06</version>
+    <version>1.00.08</version>
     <packaging>jar</packaging>
     <description>Library for implementation BDD in project with PageObjectPattern and testNg</description>
 

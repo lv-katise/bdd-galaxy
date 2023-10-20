@@ -3,6 +3,7 @@ package lv.katise.bdd_galaxy.integration.collector;
 import lv.katise.bdd_galaxy.core.UUIDGenerator;
 import lv.katise.bdd_galaxy.integration.bdd.Action;
 import lv.katise.bdd_galaxy.integration.bdd.BDDContext;
+import lv.katise.bdd_galaxy.integration.bdd.Group;
 import lv.katise.bdd_galaxy.integration.collector.action.IActionReturn;
 import lv.katise.bdd_galaxy.integration.collector.action.defauld.ActionArgument;
 import lv.katise.bdd_galaxy.integration.collector.action.defauld.ArgumentType;
@@ -50,15 +51,16 @@ public class ActionCollector implements IActionCollector {
     private List<BDDStep> collectActions(String gluePath) {
         List<Method> methods = getMethods(gluePath, Action.class);
         return methods.stream().map(e -> {
+            Class<?> declaringClass = e.getDeclaringClass();
             Action annotation = e.getAnnotation(Action.class);
 
-            IActionReturn returnInstance = buildReturn(e.getReturnType(), e.getDeclaringClass());
+            IActionReturn returnInstance = buildReturn(e.getReturnType(), declaringClass);
             BDDStep bddStep = new BDDStep(
                     annotation.isEntrypoint(),
                     annotation.value(),
                     null,
                     returnInstance);
-            bddStep.setGroupId(provideCurrentGroup(e.getDeclaringClass()).getId());
+            bddStep.setGroupId(provideCurrentGroup(declaringClass).getId());
             for (Parameter parameter : e.getParameters()) {
                 Class<?> parameterType = parameter.getType();
                 Optional<ArgumentType> argumentType = provideArgumentType(parameterType);
@@ -97,11 +99,17 @@ public class ActionCollector implements IActionCollector {
     private Optional<ArgumentType> provideArgumentType(Class<?> clazz) {
         if (clazz.equals(String.class)) {
             return Optional.of(ArgumentType.STRING);
+        } else if (clazz.equals(Enum.class)) {
+            return Optional.of(ArgumentType.STRING);
         } else if (clazz.equals(Boolean.class)) {
             return Optional.of(ArgumentType.BOOLEAN);
         } else if (clazz.equals(Integer.class)) {
             return Optional.of(ArgumentType.INTEGER);
+        } else if (clazz.equals(Long.class)) {
+            return Optional.of(ArgumentType.INTEGER);
         } else if (clazz.equals(Double.class)) {
+            return Optional.of(ArgumentType.DOUBLE);
+        } else if (clazz.equals(Float.class)) {
             return Optional.of(ArgumentType.DOUBLE);
         } else if (clazz.equals(LocalDateTime.class)) {
             return Optional.of(ArgumentType.DATE_TIME);
@@ -121,16 +129,17 @@ public class ActionCollector implements IActionCollector {
     private ITestStepGroup provideCurrentGroup(Class<?> actionDefinedClass) {
         UUID definedKey = UUIDGenerator.generateUUIDFromString(String.valueOf(actionDefinedClass));
         if (!groupMap.containsKey(definedKey)) {
-
-            Class<?> groupClass;
-            if (actionDefinedClass == null || BDDContext.class.isAssignableFrom(actionDefinedClass)) {
+            Class<?> groupClass = null;
+            String groupName = null;
+            if (BDDContext.class.isAssignableFrom(actionDefinedClass) ||
+                    actionDefinedClass.isAnnotationPresent(Group.class)) {
                 groupClass = actionDefinedClass;
-            } else {
-                return provideCurrentGroup(null);
+                groupName = actionDefinedClass.isAnnotationPresent(Group.class) ?
+                        actionDefinedClass.getAnnotation(Group.class).value() :
+                        String.valueOf(actionDefinedClass);
             }
 
-            ActionGroup actionGroup = new ActionGroup();
-            actionGroup.setClass(groupClass);
+            ActionGroup actionGroup = new ActionGroup(groupClass, groupName);
             groupMap.put(UUIDGenerator.generateUUIDFromString(String.valueOf(groupClass)), actionGroup);
             return actionGroup;
         } else {
